@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Alerte au garage</title>
+<link rel="icon" href="icone-192.png">
+<style>
+  :root {
+    --marine: #0b2237; --marine-2: #123651; --marine-3: #1d4a6c; --acier: #c9d2d9;
+    --blanc: #fff; --entree: #1c8a4c; --sortie: #cf4418; --avis: #ffd98a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--blanc); background-color: var(--marine);
+    background-image: radial-gradient(120% 70% at 50% 0%, var(--marine-3) 0%, var(--marine-2) 38%, var(--marine) 78%);
+    background-attachment: fixed;
+    font: 500 16px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 16px) 16px 40px; }
+  header img { height: 64px; display: block; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 16px 0 8px; }
+  h2 { font-size: 19px; margin: 26px 0 8px; }
+  p { margin: 8px 0; color: var(--acier); }
+  ol { padding-left: 24px; margin: 8px 0; }
+  li { margin: 7px 0; overflow-wrap: anywhere; }
+  b { color: var(--blanc); }
+  code { font: 600 15px ui-monospace, Menlo, monospace; color: var(--avis); overflow-wrap: anywhere; }
+  .carte { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 14px; margin: 14px 0; }
+  .onglets { display: flex; gap: 8px; margin-top: 18px; }
+  .onglets button, .copier {
+    font: 700 16px inherit; font-family: inherit; color: var(--blanc); cursor: pointer; border-radius: 10px; padding: 12px 14px; min-height: 46px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  }
+  .onglets button { flex: 1; }
+  .onglets button[aria-pressed="true"] { background: var(--entree); border-color: var(--entree); }
+  .copier { width: 100%; background: var(--entree); border-color: var(--entree); }
+  .avis { color: var(--avis); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="logo.png" alt="Garage Le Général"></header>
+  <h1>Une alerte en arrivant et en partant du garage</h1>
+  <p>Ton téléphone t'avertit si tu arrives sans avoir punché, ou si tu pars encore punché. C'est un réglage à faire une seule fois, environ 10 minutes.</p>
+  <p><b>Ta position reste sur ton téléphone.</b> Le garage ne la voit pas : le téléphone demande seulement au punch si tu es punché ou non. Tu peux enlever l'alerte quand tu veux.</p>
+
+  <div class="carte" id="avecLien" hidden>
+    <p style="margin-top:0"><b>Ton adresse personnelle</b>, à coller à l'étape indiquée. Ne la partage pas.</p>
+    <button class="copier" id="copier" type="button">Copier mon adresse</button>
+    <p id="adresse" style="margin-bottom:0"><code id="adresseTexte"></code></p>
+  </div>
+  <div class="carte avis" id="sansLien" hidden>Ouvre cette page avec le lien reçu du bureau : il contient ton adresse personnelle.</div>
+
+  <div class="onglets">
+    <button type="button" id="choixIphone" aria-pressed="true">iPhone</button>
+    <button type="button" id="choixAndroid" aria-pressed="false">Android</button>
+  </div>
+
+  <section id="iphone">
+    <h2>1. L'alerte en arrivant</h2>
+    <ol>
+      <li>Ouvre l'app <b>Raccourcis</b>, puis l'onglet <b>Automatisation</b>, et touche <b>+</b>.</li>
+      <li>Choisis <b>Arrivée</b>, puis comme lieu : <code>180 Rue Galt Ouest, Sherbrooke</code>. Autorise la localisation <b>Toujours</b> si on te le demande.</li>
+      <li>Choisis <b>Exécuter immédiatement</b>, puis <b>Suivant</b> et <b>Nouveau raccourci vide</b>.</li>
+      <li>Ajoute l'action <b>Obtenir le contenu de l'URL</b> et colle ton adresse personnelle.</li>
+      <li>Ajoute l'action <b>Si</b> : <b>Contenu de l'URL</b>, <b>contient</b>, <code>DEHORS</code>.</li>
+      <li>Dans le Si, ajoute <b>Afficher une notification</b> : <code>Tu es au garage. Oublie pas de puncher ton entrée!</code></li>
+    </ol>
+    <h2>2. L'alerte en partant</h2>
+    <ol>
+      <li>Touche encore <b>+</b> et choisis <b>Départ</b>, avec le même lieu et <b>Exécuter immédiatement</b>.</li>
+      <li>Refais les mêmes actions, avec <code>DEDANS</code> dans le Si.</li>
+      <li>Comme notification : <code>Tu as quitté le garage et tu es encore punché. Oublie pas ta sortie!</code></li>
+    </ol>
+    <p>iPhone peut aussi afficher son propre petit avis chaque fois que l'automatisation roule. Seul le message du garage veut dire qu'il manque un punch.</p>
+  </section>
+
+  <section id="android" hidden>
+    <h2>1. Installer l'app</h2>
+    <ol>
+      <li>Installe <b>MacroDroid</b> du Play Store. La version gratuite suffit : n'achète rien.</li>
+      <li>Accepte la localisation <b>Toujours autoriser</b> et les notifications quand elle les demande.</li>
+    </ol>
+    <h2>2. L'alerte en arrivant</h2>
+    <ol>
+      <li>Crée une macro. Déclencheur : <b>Géorepérage</b> (Geofence), <b>Entrée dans la zone</b>, avec une zone autour de <code>180 Rue Galt Ouest, Sherbrooke</code>.</li>
+      <li>Action : <b>Requête HTTP</b> (HTTP Request), méthode <b>GET</b>, avec ton adresse personnelle. Garde la réponse dans une variable texte nommée <code>punch</code>.</li>
+      <li>Action : <b>Si</b> la variable <code>punch</code> contient <code>DEHORS</code>, <b>Afficher une notification</b> : <code>Tu es au garage. Oublie pas de puncher ton entrée!</code></li>
+    </ol>
+    <h2>3. L'alerte en partant</h2>
+    <ol>
+      <li>Crée une deuxième macro pareille, avec <b>Sortie de la zone</b> et <code>DEDANS</code>.</li>
+      <li>Comme notification : <code>Tu as quitté le garage et tu es encore punché. Oublie pas ta sortie!</code></li>
+    </ol>
+    <p>Si l'alerte ne part pas, enlève l'optimisation de la batterie pour MacroDroid dans les réglages du téléphone.</p>
+  </section>
+
+  <h2>Si tu ne reçois rien</h2>
+  <p>Vérifie que la localisation est permise tout le temps. Le téléphone peut aussi réagir en retard : les rappels par courriel de 9 h, du dîner et de 17 h restent là au cas où. L'alerte ne punche jamais à ta place, c'est toi qui punches dans l'app.</p>
+</main>
+<script src="config.js"></script>
+<script>
+  (function () {
+    var jeton = new URLSearchParams(location.search).get('t');
+    var bouton = document.getElementById('copier');
+    if (jeton) {
+      var adresse = window.PUNCH_URL_API + '?etat=' + encodeURIComponent(jeton);
+      document.getElementById('avecLien').hidden = false;
+      document.getElementById('adresseTexte').textContent = adresse;
+      bouton.addEventListener('click', function () {
+        navigator.clipboard.writeText(adresse).then(function () {
+          bouton.textContent = 'Copié!';
+        }, function () {
+          bouton.textContent = 'Copie impossible : sélectionne l\'adresse';
+        });
+      });
+    } else {
+      document.getElementById('sansLien').hidden = false;
+    }
+    function montrer(android) {
+      document.getElementById('android').hidden = !android;
+      document.getElementById('iphone').hidden = android;
+      document.getElementById('choixAndroid').setAttribute('aria-pressed', android);
+      document.getElementById('choixIphone').setAttribute('aria-pressed', !android);
+    }
+    document.getElementById('choixIphone').addEventListener('click', function () { montrer(false); });
+    document.getElementById('choixAndroid').addEventListener('click', function () { montrer(true); });
+    montrer(/android/i.test(navigator.userAgent));
+  })();
+</script>
+</body>
+</html>
