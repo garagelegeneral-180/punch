@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<title>Punch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b2237">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Punch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" href="icone-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --marine: #0b2237; --marine-2: #123651; --marine-3: #1d4a6c; --acier: #c9d2d9; --acier-doux: #8fa3b3;
+    --blanc: #fff; --entree: #1c8a4c; --entree-2: #27ad62; --sortie: #cf4418; --sortie-2: #ec6a31; --avis: #ffd98a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; color: var(--blanc); background-color: var(--marine);
+    background-image:
+      radial-gradient(120% 70% at 50% 0%, var(--marine-3) 0%, var(--marine-2) 38%, var(--marine) 78%);
+    background-attachment: fixed;
+    font: 500 16px/1.4 Montserrat, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior-y: none;
+  }
+  main {
+    max-width: 440px; margin: 0 auto; min-height: 100%;
+    padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 28px);
+    display: flex; flex-direction: column;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header img { height: 58px; width: auto; display: block; }
+  .qui { text-align: right; min-width: 0; }
+  .qui b { display: block; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qui span { color: var(--acier); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+  /* Bouton : un cadran d'atelier. L'anneau d'acier se remplit avec les heures de la journée. */
+  .cadran { position: relative; width: min(78vw, 310px, 46vh); aspect-ratio: 1; margin: 22px auto 12px; }
+  .cadran svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .piste { fill: none; stroke: rgba(255,255,255,.13); stroke-width: 7; }
+  .progres { fill: none; stroke: url(#acier); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset .8s ease; }
+  #bouton {
+    position: absolute; inset: 7.5%; border-radius: 50%; border: 0; cursor: pointer; color: var(--blanc);
+    font: 400 clamp(30px, 9.5vw, 42px)/1.05 "Alfa Slab One", Georgia, serif; letter-spacing: .5px;
+    box-shadow: 0 16px 38px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.28), inset 0 -8px 20px rgba(0,0,0,.2);
+    transition: transform .12s ease, filter .12s ease, background .25s ease; touch-action: manipulation;
+    text-shadow: 0 2px 0 rgba(0,0,0,.25);
+  }
+  #bouton small { display: block; margin-top: 8px; font: 600 13px Montserrat, sans-serif; letter-spacing: .2px; text-shadow: none; opacity: .92; }
+  #bouton.entree { background: radial-gradient(circle at 50% 28%, var(--entree-2), var(--entree) 72%); }
+  #bouton.sortie { background: radial-gradient(circle at 50% 28%, var(--sortie-2), var(--sortie) 72%); }
+  #bouton:active { transform: scale(.96); filter: brightness(.94); }
+  #bouton:disabled { filter: saturate(.35) brightness(.8); cursor: default; }
+  #bouton:focus-visible { outline: 3px solid var(--blanc); outline-offset: 4px; }
+
+  #statut { text-align: center; }
+  #etat { display: block; font-size: 20px; font-weight: 700; }
+  #depuis { display: block; min-height: 22px; color: var(--acier); font-variant-numeric: tabular-nums; }
+  #message { min-height: 22px; margin: 6px 0; text-align: center; font-weight: 600; color: var(--avis); }
+
+  .avis { background: rgba(255, 217, 138, .13); border: 1px solid rgba(255, 217, 138, .45); color: var(--avis); padding: 12px 14px; border-radius: 14px; margin: 8px 0; }
+  .carte { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13); border-radius: 16px; padding: 14px; margin-top: 12px; }
+  .totaux { display: flex; gap: 12px; }
+  .totaux div { flex: 1; }
+  .totaux b { display: block; font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .totaux small { color: var(--acier); font-size: 13px; }
+  ul { list-style: none; margin: 10px 0 0; padding: 0; font-variant-numeric: tabular-nums; }
+  ul:empty { display: none; }
+  li { padding: 7px 0; border-top: 1px solid rgba(255,255,255,.13); display: flex; justify-content: space-between; gap: 8px; }
+  li small { color: var(--acier); }
+  .lien { display: block; width: 100%; background: none; border: 1px solid rgba(255,255,255,.28); color: var(--blanc); border-radius: 14px; padding: 14px; margin-top: 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  form label { display: block; margin-top: 10px; font-size: 14px; color: var(--acier); }
+  form input { display: block; width: 100%; padding: 12px; font: 500 16px Montserrat, sans-serif; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; background: rgba(0,0,0,.22); color: var(--blanc); margin-top: 4px; min-width: 0; color-scheme: dark; }
+  .deux { display: flex; gap: 10px; }
+  .deux label { flex: 1; min-width: 0; }
+  .envoyer { width: 100%; margin-top: 14px; padding: 14px; border: 0; border-radius: 12px; background: var(--blanc); color: var(--marine); font: 700 16px Montserrat, sans-serif; cursor: pointer; }
+  #installer p { margin: 6px 0 0; color: var(--acier); font-size: 14px; }
+  .fermer { background: none; border: 0; color: var(--acier); font: inherit; font-size: 14px; padding: 8px 0 0; cursor: pointer; text-decoration: underline; }
+
+  /* Ouverture : le logo arrive et la clé balaie l'écran. */
+  #ouverture {
+    position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    background: radial-gradient(90% 60% at 50% 42%, var(--marine-3), var(--marine) 80%); padding: 24px; overflow: hidden;
+    transition: opacity .35s ease, visibility .35s;
+  }
+  #ouverture.fini { opacity: 0; visibility: hidden; }
+  #ouverture img { width: min(78vw, 340px); height: auto; animation: arrivee .6s cubic-bezier(.2,.9,.25,1.15) both; filter: drop-shadow(0 18px 30px rgba(0,0,0,.45)); position: relative; }
+  #ouverture::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent); animation: balayage .95s .2s ease-out both;
+  }
+  #bonjour { font-size: 20px; font-weight: 600; min-height: 28px; animation: monte .45s .3s ease both; }
+  @keyframes arrivee { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+  @keyframes balayage { from { left: -60%; } to { left: 120%; } }
+  @keyframes monte { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Confirmation plein écran : on voit tout de suite que le punch est passé. */
+  #bravo {
+    position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: 24px; color: var(--blanc); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s;
+  }
+  #bravo.visible { opacity: 1; visibility: visible; }
+  #bravo.entree { background: radial-gradient(circle at 50% 40%, var(--entree-2), var(--entree) 70%); }
+  #bravo.sortie { background: radial-gradient(circle at 50% 40%, var(--sortie-2), var(--sortie) 70%); }
+  #bravo svg { width: 92px; height: 92px; }
+  #bravo svg path { stroke-dasharray: 60; stroke-dashoffset: 60; }
+  #bravo.visible svg path { animation: trace .4s .08s ease forwards; }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
+  #bravo-heure { font: 400 62px/1 "Alfa Slab One", Georgia, serif; margin: 16px 0 6px; font-variant-numeric: tabular-nums; }
+  #bravo-quoi { font-size: 16px; font-weight: 600; opacity: .95; }
+  #bravo-mot { font-size: 24px; font-weight: 700; margin-top: 14px; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="ouverture"><img src="logo.png" alt="Garage Le Général, pneus et mécanique"><div id="bonjour"></div></div>
+
+<div id="bravo" role="status" aria-live="assertive">
+  <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="22" stroke="rgba(255,255,255,.55)" stroke-width="2.5"/><path d="M13 25l8 8 15-17" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div id="bravo-heure"></div>
+  <div id="bravo-quoi"></div>
+  <div id="bravo-mot"></div>
+</div>
+
+<main>
+  <header>
+    <img src="logo.png" alt="Garage Le Général">
+    <div class="qui"><b id="nom"></b><span id="horloge"></span></div>
+  </header>
+
+  <div class="cadran">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="acier" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#8d99a3"/><stop offset="1" stop-color="#e6ebef"/></linearGradient></defs>
+      <circle class="piste" cx="50" cy="50" r="46"/>
+      <circle class="progres" id="progres" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+    </svg>
+    <button id="bouton" class="entree" type="button" disabled>…</button>
+  </div>
+
+  <div id="statut"><span id="etat">&nbsp;</span><span id="depuis"></span></div>
+  <div id="message" role="status" aria-live="polite"></div>
+
+  <div id="oubli" class="avis" hidden>Ton entrée de <b id="oubli-quand"></b> n'a jamais été fermée. Indique ton heure de sortie plus bas : ton patron la confirmera.</div>
+
+  <section class="carte">
+    <div class="totaux">
+      <div><b id="total-jour">0 h 00</b><small>Aujourd'hui</small></div>
+      <div><b id="total-semaine">0 h 00</b><small>Cette semaine</small></div>
+    </div>
+    <ul id="lignes"></ul>
+  </section>
+
+  <section class="carte" id="installer" hidden>
+    <strong>Ajoute le punch à ton téléphone</strong>
+    <p id="installer-texte"></p>
+    <button class="envoyer" id="installer-bouton" type="button" hidden>Installer</button>
+    <button class="fermer" id="installer-fermer" type="button">Pas maintenant</button>
+  </section>
+
+  <button class="lien" id="ouvrir-correction" type="button">Corriger une heure</button>
+
+  <form id="correction" class="carte" hidden>
+    <strong>Demander une correction</strong>
+    <label>Date <input type="date" id="c-date" required></label>
+    <div class="deux">
+      <label>Entrée <input type="time" id="c-debut" required></label>
+      <label>Sortie <input type="time" id="c-fin" required></label>
+    </div>
+    <label>Raison <input type="text" id="c-motif" maxlength="200" required placeholder="Ex. : oublié ma sortie"></label>
+    <button class="envoyer" type="submit">Envoyer à mon patron</button>
+  </form>
+
+  <section class="carte" id="demandes" hidden>
+    <strong>Mes demandes</strong>
+    <ul id="liste-demandes"></ul>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+  var CLE_JETON = 'punch-jeton';
+  var CLE_INSTALLER = 'punch-installer-vu';
+  var JOURNEE_MIN = 8 * 60;
+  var LIBELLES = { attente: 'En attente', approuvee: 'Approuvée', refusee: 'Refusée' };
+  var etat = null;
+  var invite = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function lireStockage(cle) { try { return localStorage.getItem(cle); } catch (e) { return null; } }
+  function ecrireStockage(cle, v) { try { localStorage.setItem(cle, v); } catch (e) {} }
+
+  var JETON = window.PUNCH_JETON || new URLSearchParams(location.search).get('t') || lireStockage(CLE_JETON);
+  if (JETON) ecrireStockage(CLE_JETON, JETON);
+
+  // Le type text/plain évite la vérification préalable que Apps Script ne sait pas traiter.
+  function api(fn, args) {
+    if (window.PUNCH_API) return window.PUNCH_API(fn, args);
+    return fetch(window.PUNCH_URL_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow' })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.erreur || 'Erreur');
+        return r.valeur;
+      });
+  }
+
+  function duree(min) {
+    var h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h + ' h ' + (m < 10 ? '0' : '') + m;
+  }
+
+  function prenom(nom) {
+    var p = String(nom || '').split(/\s+/)[0] || '';
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  }
+
+  function message(t) { $('message').textContent = t || ''; }
+
+  function erreur(e) {
+    var t = !navigator.onLine ? 'Pas de réseau : rien n\'a été enregistré. Réessaie.' : ((e && e.message) || 'Rien n\'a été enregistré. Réessaie.');
+    message(t);
+    $('bouton').disabled = !etat || etat.oublie;
+    rendreBouton();
+  }
+
+  function rendreBouton() {
+    if (!etat) return;
+    var b = $('bouton');
+    b.className = etat.en_poste ? 'sortie' : 'entree';
+    b.textContent = etat.en_poste ? 'SORTIE' : 'ENTRÉE';
+  }
+
+  function afficher(e) {
+    etat = e;
+    $('nom').textContent = e.nom;
+    $('etat').textContent = e.en_poste ? 'Au travail' : 'Pas au travail';
+    rendreBouton();
+    $('bouton').disabled = e.oublie;
+    $('oubli').hidden = !e.oublie;
+    if (e.oublie) {
+      $('oubli-quand').textContent = e.date_quart_ouvert + ' à ' + e.depuis;
+      ouvrirCorrection(e.date_quart_ouvert, e.depuis);
+    }
+    var l = $('lignes');
+    l.textContent = '';
+    e.lignes.forEach(function (x) {
+      var li = document.createElement('li');
+      li.textContent = x.debut + ' → ' + (x.fin || 'en cours');
+      l.appendChild(li);
+    });
+    $('demandes').hidden = !e.corrections.length;
+    var d = $('liste-demandes');
+    d.textContent = '';
+    e.corrections.forEach(function (c) {
+      var li = document.createElement('li');
+      var a = document.createElement('span');
+      a.textContent = c.date + ' · ' + c.debut + '–' + c.fin;
+      var s = document.createElement('small');
+      s.textContent = LIBELLES[c.statut] || c.statut;
+      li.appendChild(a);
+      li.appendChild(s);
+      d.appendChild(li);
+    });
+    tic();
+  }
+
+  function tic() {
+    var n = new Date();
+    var minutes = n.getMinutes();
+    $('horloge').textContent = n.getHours() + ' h ' + (minutes < 10 ? '0' : '') + minutes;
+    if (!etat) return;
+    var enCours = etat.en_poste && !etat.oublie ? Math.max(0, Math.floor((Date.now() - etat.charge_a) / 60000)) : 0;
+    var jour = etat.minutes_jour + enCours;
+    $('total-jour').textContent = duree(jour);
+    $('total-semaine').textContent = duree(etat.minutes_semaine + enCours);
+    $('depuis').textContent = etat.en_poste ? 'Depuis ' + etat.depuis + ' · ' + duree(Math.floor((Date.now() - etat.depuis_ms) / 60000)) : '';
+    $('progres').setAttribute('stroke-dashoffset', String(100 - Math.min(100, jour / JOURNEE_MIN * 100)));
+    // Le bout arrondi laisserait un point sur l'anneau à 0 h.
+    $('progres').style.opacity = jour > 0 ? 1 : 0;
+  }
+
+  function motDuMoment(action, nom) {
+    var n = new Date(), h = n.getHours(), p = prenom(nom);
+    if (action === 'entree') {
+      if (h >= 11 && h < 15) return 'Bon retour, ' + p + '!';
+      return 'Bonne journée, ' + p + '!';
+    }
+    if (h >= 11 && h < 14) return 'Bon dîner, ' + p + '!';
+    if (h >= 15) return n.getDay() === 5 ? 'Bonne fin de semaine, ' + p + '!' : 'Merci, ' + p + '. À demain!';
+    return 'À plus tard, ' + p + '!';
+  }
+
+  function celebrer(action, e) {
+    $('bravo').className = action + ' visible';
+    $('bravo-heure').textContent = e.heure;
+    $('bravo-quoi').textContent = action === 'entree' ? 'Entrée enregistrée' : 'Sortie enregistrée';
+    $('bravo-mot').textContent = motDuMoment(action, e.nom);
+    if (navigator.vibrate) navigator.vibrate(action === 'entree' ? 70 : [50, 60, 50]);
+    setTimeout(function () { $('bravo').className = action; }, 2200);
+  }
+
+  function recu(e) {
+    e.charge_a = Date.now();
+    return e;
+  }
+
+  $('bouton').addEventListener('click', function () {
+    if (!etat || this.disabled) return;
+    var action = etat.en_poste ? 'sortie' : 'entree';
+    this.disabled = true;
+    this.textContent = '…';
+    message('');
+    api('punch', [JETON, action]).then(function (e) {
+      afficher(recu(e));
+      if (e.fait) celebrer(action, e);
+      else message('Déjà enregistré : voici ton état actuel.');
+    }).catch(erreur);
+  });
+
+  function ouvrirCorrection(date, debut) {
+    $('correction').hidden = false;
+    $('c-date').value = date || etat.aujourdhui;
+    $('c-date').max = etat.aujourdhui;
+    if (debut) $('c-debut').value = debut;
+  }
+
+  $('ouvrir-correction').addEventListener('click', function () {
+    if (!etat) return;
+    if ($('correction').hidden) ouvrirCorrection();
+    else if (!etat.oublie) $('correction').hidden = true;
+  });
+
+  $('correction').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    message('Envoi…');
+    var date = $('c-date').value;
+    api('demanderCorrection', [JETON, {
+      date: date, debut: $('c-debut').value, fin: $('c-fin').value, motif: $('c-motif').value,
+      // Seul le quart oublié est lié ; toute autre demande en crée un nouveau à l'approbation.
+      quart_id: etat.oublie && date === etat.date_quart_ouvert ? etat.quart_ouvert : ''
+    }]).then(function (e) {
+      $('correction').reset();
+      $('correction').hidden = true;
+      afficher(recu(e));
+      message('Demande envoyée à ton patron.');
+    }).catch(erreur);
+  });
+
+  // Aide à l'installation, tant que l'app n'est pas sur l'écran d'accueil.
+  function preparerInstallation() {
+    var installe = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (installe || lireStockage(CLE_INSTALLER)) return;
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    $('installer-texte').textContent = ios
+      ? 'Dans Safari : touche le bouton Partager, puis « Sur l\'écran d\'accueil ». Le logo du garage deviendra ton icône.'
+      : 'Touche le menu ⋮ de Chrome, puis « Ajouter à l\'écran d\'accueil ». Le logo du garage deviendra ton icône.';
+    $('installer').hidden = false;
+  }
+
+  window.addEventListener('beforeinstallprompt', function (ev) {
+    ev.preventDefault();
+    invite = ev;
+    $('installer-bouton').hidden = false;
+  });
+  $('installer-bouton').addEventListener('click', function () {
+    if (!invite) return;
+    invite.prompt();
+    invite.userChoice.then(function () { $('installer').hidden = true; });
+  });
+  $('installer-fermer').addEventListener('click', function () {
+    ecrireStockage(CLE_INSTALLER, '1');
+    $('installer').hidden = true;
+  });
+
+  function finOuverture() { $('ouverture').className = 'fini'; }
+
+  function demarrer() {
+    if (!JETON) {
+      $('bonjour').textContent = 'Demande ton lien personnel au bureau.';
+      return;
+    }
+    var debut = Date.now();
+    api('etatEmploye', [JETON]).then(function (e) {
+      afficher(recu(e));
+      $('bonjour').textContent = 'Bonjour, ' + prenom(e.nom) + '!';
+      preparerInstallation();
+      setTimeout(finOuverture, Math.max(900, 1300 - (Date.now() - debut)));
+    }).catch(function (e) {
+      $('bonjour').textContent = (e && e.message) || 'Impossible de joindre le punch. Vérifie ton réseau.';
+    });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && JETON && etat) api('etatEmploye', [JETON]).then(function (e) { afficher(recu(e)); }).catch(function () {});
+  });
+  setInterval(tic, 15000);
+  tic();
+  demarrer();
+</script>
+</body>
+</html>
