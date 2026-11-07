@@ -78,6 +78,8 @@
   li small { color: var(--acier); }
   .lien { display: block; width: 100%; background: none; border: 1px solid rgba(255,255,255,.28); color: var(--blanc); border-radius: 14px; padding: 14px; margin-top: 12px; font: inherit; font-weight: 600; cursor: pointer; }
   form label { display: block; margin-top: 10px; font-size: 14px; color: var(--acier); }
+  form textarea { display: block; width: 100%; padding: 12px; font: 500 16px/1.4 Montserrat, sans-serif; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; background: rgba(0,0,0,.22); color: var(--blanc); margin-top: 4px; resize: vertical; color-scheme: dark; }
+  .aide { margin: 6px 0 0; color: var(--acier); font-size: 14px; }
   form input { display: block; width: 100%; padding: 12px; font: 500 16px Montserrat, sans-serif; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; background: rgba(0,0,0,.22); color: var(--blanc); margin-top: 4px; min-width: 0; color-scheme: dark; }
   .deux { display: flex; gap: 10px; }
   .deux label { flex: 1; min-width: 0; }
@@ -117,6 +119,24 @@
   #bravo-heure { font: 400 62px/1 "Alfa Slab One", Georgia, serif; margin: 16px 0 6px; font-variant-numeric: tabular-nums; }
   #bravo-quoi { font-size: 16px; font-weight: 600; opacity: .95; }
   #bravo-mot { font-size: 24px; font-weight: 700; margin-top: 14px; }
+  #bravo-merci { max-width: 340px; font-size: 18px; font-weight: 600; line-height: 1.4; margin-top: 12px; }
+  #bravo-merci:empty { display: none; }
+  #bravo.visible #bravo-merci { animation: monte .45s .35s ease both; }
+  /* Jour de fête : confettis par-dessus tout, jusqu'à ce que l'employé touche le bouton. */
+  #fete {
+    position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: 24px; background: radial-gradient(90% 60% at 50% 42%, var(--marine-3), var(--marine) 80%);
+    transition: opacity .35s ease, visibility .35s;
+  }
+  #fete.fini { opacity: 0; visibility: hidden; }
+  #confettis { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #fete .texte { position: relative; max-width: 380px; }
+  #fete-gateau { font-size: 72px; line-height: 1; animation: arrivee .6s cubic-bezier(.2,.9,.25,1.4) both; }
+  #fete-titre { font: 400 clamp(38px, 12vw, 54px)/1.05 "Alfa Slab One", Georgia, serif; margin: 14px 0 0; color: var(--avis); text-shadow: 0 3px 0 rgba(0,0,0,.3); animation: arrivee .6s .1s cubic-bezier(.2,.9,.25,1.4) both; }
+  #fete-nom { font: 400 clamp(28px, 9vw, 40px)/1.1 "Alfa Slab One", Georgia, serif; margin: 6px 0 18px; animation: monte .45s .3s ease both; }
+  #fete-repas { font-size: 19px; font-weight: 600; margin: 0 0 26px; animation: monte .45s .5s ease both; }
+  #fete-repas b { display: block; font-size: 23px; color: var(--avis); margin-top: 4px; }
+  #fete-merci { padding: 15px 34px; border: 0; border-radius: 14px; background: var(--blanc); color: var(--marine); font: 700 17px Montserrat, sans-serif; cursor: pointer; animation: monte .45s .7s ease both; }
   [hidden] { display: none !important; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -126,11 +146,23 @@
 <body>
 <div id="ouverture"><img src="logo.png" alt="Garage Le Général, pneus et mécanique"><div id="bonjour"></div></div>
 
+<div id="fete" role="dialog" aria-labelledby="fete-titre" hidden>
+  <canvas id="confettis" aria-hidden="true"></canvas>
+  <div class="texte">
+    <div id="fete-gateau" aria-hidden="true">🎂</div>
+    <h1 id="fete-titre">Bonne fête!</h1>
+    <div id="fete-nom"></div>
+    <p id="fete-repas">Aujourd'hui, c'est toi qui décides<b>ce qu'on mange!</b></p>
+    <button id="fete-merci" type="button">Merci! 🎉</button>
+  </div>
+</div>
+
 <div id="bravo" role="status" aria-live="assertive">
   <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="22" stroke="rgba(255,255,255,.55)" stroke-width="2.5"/><path d="M13 25l8 8 15-17" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <div id="bravo-heure"></div>
   <div id="bravo-quoi"></div>
   <div id="bravo-mot"></div>
+  <div id="bravo-merci"></div>
 </div>
 
 <main>
@@ -179,6 +211,16 @@
     </div>
     <label>Raison <input type="text" id="c-motif" maxlength="200" required placeholder="Ex. : oublié ma sortie"></label>
     <button class="envoyer" type="submit">Envoyer à mon patron</button>
+  </form>
+
+  <button class="lien" id="ouvrir-message" type="button">Écrire à mon patron</button>
+  <p id="m-etat" class="aide" role="status" aria-live="polite"></p>
+
+  <form id="ecrire" class="carte" hidden>
+    <strong>Un message pour David</strong>
+    <p class="aide">Une idée, un problème, une question : il le reçoit par courriel.</p>
+    <label>Ton message <textarea id="m-texte" maxlength="1500" rows="5" required placeholder="Ex. : le lift 2 fait un drôle de bruit"></textarea></label>
+    <button class="envoyer" type="submit">Envoyer à David</button>
   </form>
 
   <section class="carte" id="demandes" hidden>
@@ -300,13 +342,32 @@
     return 'À plus tard, ' + p + '!';
   }
 
+  // Le mot du patron à la sortie du vendredi après-midi : un différent chaque semaine.
+  var MERCIS = [
+    'Merci pour ton beau travail cette semaine. Je suis vraiment chanceux d\'avoir une équipe comme vous autres!',
+    'Une autre belle semaine grâce à toi. Merci pour tout ce que tu as fait!',
+    'Beau travail cette semaine! Le garage ne serait pas le même sans toi.',
+    'Merci pour tes efforts cette semaine. Une équipe comme la nôtre, c\'est rare!',
+    'Tu as fait une grosse différence cette semaine. Merci, je l\'apprécie vraiment!',
+    'Merci d\'être là et de donner ton meilleur. Je suis fier de mon équipe!'
+  ];
+
+  function merciDuJour(action) {
+    var n = new Date();
+    if (action !== 'sortie' || n.getDay() !== 5 || n.getHours() < 15) return '';
+    var semaine = Math.floor((n - new Date(n.getFullYear(), 0, 1)) / (7 * 86400000));
+    return MERCIS[semaine % MERCIS.length];
+  }
+
   function celebrer(action, e) {
+    var merci = merciDuJour(action);
     $('bravo').className = action + ' visible';
     $('bravo-heure').textContent = e.heure;
     $('bravo-quoi').textContent = action === 'entree' ? 'Entrée enregistrée' : 'Sortie enregistrée';
     $('bravo-mot').textContent = motDuMoment(action, e.nom);
+    $('bravo-merci').textContent = merci;
     if (navigator.vibrate) navigator.vibrate(action === 'entree' ? 70 : [50, 60, 50]);
-    setTimeout(function () { $('bravo').className = action; }, 2200);
+    setTimeout(function () { $('bravo').className = action; }, merci ? 5000 : 2200);
   }
 
   function recu(e) {
@@ -356,6 +417,26 @@
     }).catch(erreur);
   });
 
+  $('ouvrir-message').addEventListener('click', function () {
+    $('m-etat').textContent = '';
+    $('ecrire').hidden = !$('ecrire').hidden;
+    if (!$('ecrire').hidden) $('m-texte').focus();
+  });
+
+  $('ecrire').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var envoyer = this.querySelector('.envoyer');
+    envoyer.disabled = true;
+    $('m-etat').textContent = 'Envoi…';
+    api('ecrirePatron', [JETON, $('m-texte').value]).then(function () {
+      $('ecrire').reset();
+      $('ecrire').hidden = true;
+      $('m-etat').textContent = 'Message envoyé à David. Merci!';
+    }).catch(function (e) {
+      $('m-etat').textContent = (!navigator.onLine ? 'Pas de réseau : le message n\'est pas parti. Réessaie.' : ((e && e.message) || 'Le message n\'est pas parti. Réessaie.'));
+    }).then(function () { envoyer.disabled = false; });
+  });
+
   // Aide à l'installation, tant que l'app n'est pas sur l'écran d'accueil.
   function preparerInstallation() {
     var installe = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -384,6 +465,51 @@
 
   function finOuverture() { $('ouverture').className = 'fini'; }
 
+  // Une explosion au centre, puis une pluie de confettis tant que l'écran de fête est ouvert.
+  function confettis() {
+    var c = $('confettis'), ctx = c.getContext('2d'), r = window.devicePixelRatio || 1;
+    var couleurs = ['#ffd98a', '#27ad62', '#ec6a31', '#ffffff', '#5fb4ff', '#ff5d8f'];
+    var bouts = [], fin = Date.now() + 6000, l, h;
+    function taille() {
+      l = c.clientWidth; h = c.clientHeight;
+      c.width = l * r; c.height = h * r;
+      ctx.setTransform(r, 0, 0, r, 0, 0);
+    }
+    function bout(x, y, vx, vy) {
+      bouts.push({ x: x, y: y, vx: vx, vy: vy, t: 6 + Math.random() * 6, a: Math.random() * 6.3, va: (Math.random() - .5) * .35, c: couleurs[bouts.length % couleurs.length] });
+    }
+    taille();
+    window.addEventListener('resize', taille);
+    for (var i = 0; i < 160; i++) {
+      var angle = Math.random() * Math.PI * 2, vitesse = 4 + Math.random() * 11;
+      bout(l / 2, h * .42, Math.cos(angle) * vitesse, Math.sin(angle) * vitesse - 4);
+    }
+    (function image() {
+      if ($('fete').className === 'fini') return;
+      if (Date.now() < fin && bouts.length < 260) bout(Math.random() * l, -10, (Math.random() - .5) * 2, 2 + Math.random() * 2);
+      ctx.clearRect(0, 0, l, h);
+      bouts = bouts.filter(function (b) {
+        b.vx *= .985; b.vy = b.vy * .985 + .22; b.x += b.vx; b.y += b.vy; b.a += b.va;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.a);
+        ctx.fillStyle = b.c;
+        ctx.fillRect(-b.t / 2, -b.t / 4, b.t, b.t / 2 * Math.abs(Math.cos(b.a * 2)) + 1);
+        ctx.restore();
+        return b.y < h + 20;
+      });
+      if (bouts.length || Date.now() < fin) requestAnimationFrame(image);
+    })();
+  }
+
+  function feter(nom) {
+    $('fete-nom').textContent = prenom(nom) + '!';
+    $('fete').hidden = false;
+    if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 160]);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) confettis();
+  }
+  $('fete-merci').addEventListener('click', function () { $('fete').className = 'fini'; });
+
   function demarrer() {
     if (!JETON) {
       $('bonjour').textContent = 'Demande ton lien personnel au bureau.';
@@ -394,7 +520,10 @@
       afficher(recu(e));
       $('bonjour').textContent = 'Bonjour, ' + prenom(e.nom) + '!';
       preparerInstallation();
-      setTimeout(finOuverture, Math.max(900, 1300 - (Date.now() - debut)));
+      setTimeout(function () {
+        finOuverture();
+        if (e.fete) feter(e.nom);
+      }, Math.max(900, 1300 - (Date.now() - debut)));
     }).catch(function (e) {
       $('bonjour').textContent = (e && e.message) || 'Impossible de joindre le punch. Vérifie ton réseau.';
     });
