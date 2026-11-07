@@ -80,6 +80,13 @@
   form label { display: block; margin-top: 10px; font-size: 14px; color: var(--acier); }
   form textarea { display: block; width: 100%; padding: 12px; font: 500 16px/1.4 Montserrat, sans-serif; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; background: rgba(0,0,0,.22); color: var(--blanc); margin-top: 4px; resize: vertical; color-scheme: dark; }
   .aide { margin: 6px 0 0; color: var(--acier); font-size: 14px; }
+  .aide:empty { display: none; }
+  .semaine { margin-top: 14px; }
+  .semaine h3 { display: flex; justify-content: space-between; gap: 8px; margin: 0; padding: 8px 0; font-size: 15px; border-bottom: 2px solid rgba(255,255,255,.25); font-variant-numeric: tabular-nums; }
+  .jour { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .jour > div { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .jour small { display: block; color: var(--acier); font-variant-numeric: tabular-nums; }
+  .jour .corriger { color: var(--avis); }
   form input { display: block; width: 100%; padding: 12px; font: 500 16px Montserrat, sans-serif; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; background: rgba(0,0,0,.22); color: var(--blanc); margin-top: 4px; min-width: 0; color-scheme: dark; }
   .deux { display: flex; gap: 10px; }
   .deux label { flex: 1; min-width: 0; }
@@ -198,6 +205,14 @@
     <p id="installer-texte"></p>
     <button class="envoyer" id="installer-bouton" type="button" hidden>Installer</button>
     <button class="fermer" id="installer-fermer" type="button">Pas maintenant</button>
+  </section>
+
+  <button class="lien" id="ouvrir-heures" type="button">Mes heures</button>
+
+  <section class="carte" id="heures" hidden>
+    <strong>Mes heures des 5 dernières semaines</strong>
+    <p class="aide" id="heures-etat"></p>
+    <div id="heures-liste"></div>
   </section>
 
   <button class="lien" id="ouvrir-correction" type="button">Corriger une heure</button>
@@ -415,6 +430,61 @@
       afficher(recu(e));
       message('Demande envoyée à ton patron.');
     }).catch(erreur);
+  });
+
+  var JOURS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+  var MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juill.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+  function jourLisible(date, avecJour) {
+    var p = date.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return (avecJour ? JOURS[d.getDay()] + ' ' : '') + (+p[2] === 1 ? '1er' : +p[2]) + ' ' + MOIS[+p[1] - 1];
+  }
+
+  function element(tag, classe, texte) {
+    var el = document.createElement(tag);
+    if (classe) el.className = classe;
+    if (texte !== undefined) el.textContent = texte;
+    return el;
+  }
+
+  function afficherHeures(semaines) {
+    var liste = $('heures-liste');
+    liste.textContent = '';
+    semaines.forEach(function (s, i) {
+      var bloc = element('div', 'semaine');
+      var titre = element('h3');
+      titre.appendChild(element('span', '', i === 0 ? 'Cette semaine' : 'Du ' + jourLisible(s.debut) + ' au ' + jourLisible(s.fin)));
+      titre.appendChild(element('span', '', duree(s.minutes)));
+      bloc.appendChild(titre);
+      if (!s.jours.length) bloc.appendChild(element('small', 'aide', 'Aucune heure.'));
+      s.jours.forEach(function (j) {
+        var jour = element('div', 'jour');
+        var ligne = element('div');
+        ligne.appendChild(element('span', '', jourLisible(j.date, true)));
+        ligne.appendChild(element('span', '', duree(j.minutes)));
+        jour.appendChild(ligne);
+        j.lignes.forEach(function (l) {
+          jour.appendChild(l.a_corriger
+            ? element('small', 'corriger', l.debut + ' → sortie oubliée, à corriger (pas encore comptée)')
+            : element('small', '', l.debut + ' → ' + (l.fin || 'en cours')));
+        });
+        bloc.appendChild(jour);
+      });
+      liste.appendChild(bloc);
+    });
+  }
+
+  $('ouvrir-heures').addEventListener('click', function () {
+    if (!$('heures').hidden) { $('heures').hidden = true; return; }
+    $('heures').hidden = false;
+    $('heures-etat').textContent = 'Chargement…';
+    $('heures-liste').textContent = '';
+    api('mesHeures', [JETON]).then(function (semaines) {
+      $('heures-etat').textContent = '';
+      afficherHeures(semaines);
+    }).catch(function (e) {
+      $('heures-etat').textContent = !navigator.onLine ? 'Pas de réseau. Réessaie.' : ((e && e.message) || 'Impossible de charger tes heures. Réessaie.');
+    });
   });
 
   $('ouvrir-message').addEventListener('click', function () {
